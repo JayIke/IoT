@@ -68,10 +68,10 @@ async function main( )
         if (metric == 'D'){
             let curTime = Date.now();
             console.log('curTime: ' + curTime);
-            let dur = parInt(measurement)*100;
+            let dur = (parInt(measurement)*100);
             let beginTime = curTime-dur;
-            let start = new Date(beginTime.toString());
-            let end = new Date(curTime.toString());
+            let start = new Date(beginTime);
+            let end = new Date(curTime);
             console.log('Start: ' + start + ' End: ' + end);
             startStamp = start.toISOString();
             endStamp = end.toISOString();
