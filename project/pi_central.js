@@ -16,7 +16,9 @@ const DATE_CHAR_UUID = '00002aed-0000-1000-8000-00805f9b34fb';
 const DATETIME_CHAR_UUID = '00002a08-0000-1000-8000-00805f9b34fb';
 const BAT_CHAR_UUID = '00002a19-0000-1000-8000-00805f9b34fb';
 
-
+async function callParseData(x){
+    parseSensorData(x);
+}
 
 async function main( )
 {
@@ -45,14 +47,41 @@ async function main( )
 	const humChar = await essService.getCharacteristic( HUM_CHAR_UUID.toLowerCase());
 	const timeChar = await essService.getCharacteristic( DATETIME_CHAR_UUID.toLowerCase());
 	const batChar = await essService.getCharacteristic( BAT_CHAR_UUID.toLowerCase());
-	
+    let metric = '';
+    let sessionID = '';
+    let measurement = '';
+    let startStamp = '';
+	let endStamp = '';
     // Register for notifications on the RX characteristic
     await rxChar.startNotifications( );
 
     // Callback for when data is received on RX characteristic
     rxChar.on( 'valuechanged', buffer =>
     {
-        console.log('Received: ' + buffer.toString());
+        let dat = buffer.toString();
+        let datArray = dat.split(":");
+        metric = datArray[0];
+        sessionID = datArray[1];
+        measurement = datArray[2];
+        
+        if (datArray[0] == 'D'){
+            let curTime = new Date(Date.now());
+            endStamp = curTime.toISOString();
+            let dur = datArray[2];
+            dur = parInt(dur)/1000;
+            let beginTime = curTime-dur;
+            let start = new Date(beginTime);
+            startStamp = start.toISOString();
+            endStamp = curTime.toISOString();
+            console.log('Received Duration: ' + dur);
+            console.log('ISO 8601: Start = ' + startStamp + ' End = ' + endStamp);
+        }
+        else {
+            console.log('Metric: ' + metric + ', sessionID: ' + sessionID + ', measurement: ' + measurement);
+        }
+        
+            console.log('After if/else.');
+        //call Isaac's database function
     });
 
     // Register for notifications on the temperature characteristic
@@ -62,7 +91,7 @@ async function main( )
     // Callback for when data is received on the temp characteristic
     // TODO
 
-    tempChar.on( 'valuechanged', buffer => {	
+   /* tempChar.on( 'valuechanged', buffer => {	
         const updates = {};
 	    var temp = buffer.readInt16LE(0)/100;
     	updates['lab2data/temperature'] = temp;
@@ -72,7 +101,7 @@ async function main( )
             }).catch((error) => {
                 console.error(error);
         });
-    });
+    });*/
 
     // Set up listener for console input.
     // When console input is received, write it to TX characteristic
@@ -113,6 +142,13 @@ async function main( )
 	
 }
 
+function parseSensorData(dat){
+    const datArray = dat.split(":");
+    let metric = datArray[0];
+    let uid = datArray[1];
+    let measurement = dataArray[2];
+}
+
 main().then((ret) =>
 {
     if (ret) console.log( ret );
@@ -121,9 +157,11 @@ main().then((ret) =>
     if (err) console.error( err );
 });
 
+
+
 ///////////FIREBASE THINGS////////////
 
-var firebase = require('firebase/app');
+/*var firebase = require('firebase/app');
 var nodeimu = require('@trbll/nodeimu');
 var IMU = new nodeimu.IMU();
 var sense = require('@trbll/sense-hat-led');
@@ -204,4 +242,4 @@ function updateDB(){
     	}).catch((error) => {
     		console.error(error);
 	});
-}
+}*/
