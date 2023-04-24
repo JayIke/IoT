@@ -67,10 +67,12 @@ async function main( )
         
         if (metric == 'D'){
             let curTime = Date.now();
-            let dur = parInt(measurement)*1000;
+            console.log('curTime: ' + curTime);
+            let dur = parInt(measurement)*100;
             let beginTime = curTime-dur;
-            let start = new Date(beginTime);
-            let end = new Date(curTime);
+            let start = new Date(beginTime.toString());
+            let end = new Date(curTime.toString());
+            console.log('Start: ' + start + ' End: ' + end);
             startStamp = start.toISOString();
             endStamp = end.toISOString();
             console.log('Received Duration: ' + dur);
