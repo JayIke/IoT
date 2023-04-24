@@ -44,9 +44,9 @@ async function main( )
     // TODO
     const essService = await gattServer.getPrimaryService( EES_SERVICE_UUID.toLowerCase() );
     const tempChar = await essService.getCharacteristic( TEMP_CHAR_UUID.toLowerCase() );    
-	const humChar = await essService.getCharacteristic( HUM_CHAR_UUID.toLowerCase());
-	const timeChar = await essService.getCharacteristic( DATETIME_CHAR_UUID.toLowerCase());
-	const batChar = await essService.getCharacteristic( BAT_CHAR_UUID.toLowerCase());
+	//const humChar = await essService.getCharacteristic( HUM_CHAR_UUID.toLowerCase());
+	//const timeChar = await essService.getCharacteristic( DATETIME_CHAR_UUID.toLowerCase());
+	//const batChar = await essService.getCharacteristic( BAT_CHAR_UUID.toLowerCase());
     let metric = '';
     let sessionID = '';
     let measurement = '';
@@ -131,23 +131,23 @@ async function main( )
     });
     
     // intervalValue.addListener('data', async function(d){
-       	onValue(updateInterval, (snapshot) => {
+      /* 	onValue(updateInterval, (snapshot) => {
 	const d = snapshot.val();
 	if(d){
 	d = d*1000;
 	intervalValue = d.toString(); 
 	txChar.writeValue(Buffer.from(intervalValue)).then(()=>{console.log("Send interval value "+intervalValue);});}});
 	
-    // })
+    // })*/
 	
 }
 
-function parseSensorData(dat){
+/*function parseSensorData(dat){
     const datArray = dat.split(":");
     let metric = datArray[0];
     let uid = datArray[1];
     let measurement = dataArray[2];
-}
+}*/
 
 main().then((ret) =>
 {
