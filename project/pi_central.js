@@ -59,6 +59,7 @@ async function main( )
     rxChar.on( 'valuechanged', buffer =>
     {
         let dat = buffer.toString();
+        console.log('Buffer: ' + dat);
         let datArray = dat.split(":");
         metric = datArray[0];
         sessionID = datArray[1];
@@ -80,7 +81,7 @@ async function main( )
             console.log('Metric: ' + metric + ', sessionID: ' + sessionID + ', measurement: ' + measurement);
         }
         
-            console.log('After if/else.');
+            console.log('After if/else: ' + metric + ' ' + sessionID + ' ' + measurement );
         //call Isaac's database function
     });
 
