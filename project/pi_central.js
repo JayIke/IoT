@@ -65,16 +65,16 @@ async function main( )
         sessionID = datArray[1];
         measurement = datArray[2];
         
-        if (datArray[0] == 'D'){
-            let curTime = new Date(Date.now());
-            endStamp = curTime.toISOString();
-            let dur = datArray[2];
-            dur = parInt(dur)/1000;
+        if (metric == 'D'){
+            let curTime = Date.now();
+            let dur = parInt(measurement)*1000;
             let beginTime = curTime-dur;
             let start = new Date(beginTime);
+            let end = new Date(curTime);
             startStamp = start.toISOString();
-            endStamp = curTime.toISOString();
+            endStamp = end.toISOString();
             console.log('Received Duration: ' + dur);
+            console.log('Begin Time: ' + beginTime);
             console.log('ISO 8601: Start = ' + startStamp + ' End = ' + endStamp);
         }
         else {
