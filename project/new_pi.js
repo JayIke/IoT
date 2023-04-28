@@ -1,6 +1,28 @@
 const { buf } = require( 'node:buffer' );
 const { createBluetooth } = require( 'node-ble' );
 
+///////////FIREBASE THINGS////////////
+
+var firebase = require('firebase/app');
+var nodeimu = require('@trbll/nodeimu');
+//var IMU = new nodeimu.IMU();
+//var sense = require('@trbll/sense-hat-led');
+const {getDatabase, ref, onValue, set, update, child,  get} = require('firebase/database');
+const firebaseConfig = {
+  apiKey: "AIzaSyCuJwJ8np2Bcim-ECWnqi6TE-CxbogMCNk",
+  authDomain: "showertracker-44ce2.firebaseapp.com",
+  databaseURL: "https://showertracker-44ce2-default-rtdb.firebaseio.com",
+  projectId: "showertracker-44ce2",
+  storageBucket: "showertracker-44ce2.appspot.com",
+  messagingSenderId: "125138892507",
+  appId: "1:125138892507:web:651fdd3cf5e6daab133efe",
+  measurementId: "G-KMD7EQTCC2"
+};
+
+firebase.initializeApp(firebaseConfig);
+const database = getDatabase();
+const user = 'CjREE7dyUPa6o2Mj35X5pu3Y9xS2';
+
 // TODO: Replace this with your Arduino's Bluetooth address
 // as found by running the 'scan on' command in bluetoothctl
 const ARDUINO_BLUETOOTH_ADDR = '53:92:09:13:4b:52';
@@ -52,25 +74,25 @@ rxChar.on('valuechanged', buffer => {
   let sessionID = datArray[1];
   let measurement = datArray[2];
 
-  const sessionRef = ref(database, 'users/' + user + '/showers/' + sessionID);
-
+  
+  
 
   switch (metric) {
     // Duration tag
     case 'D':
       let endStamp = new Date(Date.now()); //get current date/time 
-      console.log('endStamp: ' + endStamp);
+      console.log('endStamp: ' + endStamp.toISOString());
 
       let dur = Number(measurement); //duration in seconds
-      let duration = dur * 100; //duration in milliseconds
+      let duration = dur * 1000; //duration in milliseconds
       let startStamp = new Date(endStamp.valueOf() - duration); 
-      console.log('startStamp: ' + startStamp);
+      console.log('startStamp: ' + startStamp.toISOString);
 
       // Write time info to Firebase database
-      set(sessionRef), {
-        Duration: dur,
-        Shower_End: endStamp.toISOString(),
-        Shower_Start: startStamp.toISOString(),
+      set(database, 'users/' + user + '/showers/' + sessionID), {
+        duration: dur,
+        end: endStamp.toISOString(),
+        start: startStamp.toISOString(),
       };
       console.log('Posted duration (' + measurement + ' s) for session: ' + sessionID);
       /*set(ref(database, 'users/' + user + '/'))
@@ -89,8 +111,8 @@ rxChar.on('valuechanged', buffer => {
       // Humidity tag
     case 'H':
       // Write humidity info to Firebase database
-      set(sessionRef), {
-        Humidity: measurement,
+      set(database, 'users/' + user + '/showers/' + sessionID), {
+        humidity: measurement,
       };
       console.log('Posted humidity (' + measurement + ') for session: ' + sessionID);
       /*firebase
@@ -108,8 +130,8 @@ rxChar.on('valuechanged', buffer => {
       // Temperature tag
     case 'T':
       // Write temperature info to Firebase database
-      set(sessionRef), {
-        Temperature: measurement,
+      set(database, 'users/' + user + '/showers/' + sessionID), {
+        temperature: measurement,
       };
       console.log('Posted temperature (' + measurement + ') for session: ' + sessionID);
       /*firebase
@@ -140,27 +162,5 @@ main().then((ret) =>
 });
 
 
-///////////FIREBASE THINGS////////////
-
-var firebase = require('firebase/app');
-var nodeimu = require('@trbll/nodeimu');
-var IMU = new nodeimu.IMU();
-var sense = require('@trbll/sense-hat-led');
-const {getDatabase, ref, onValue, set, update, child,  get} = require('firebase/database');
-const firebaseConfig = {
-  apiKey: "AIzaSyCuJwJ8np2Bcim-ECWnqi6TE-CxbogMCNk",
-  authDomain: "showertracker-44ce2.firebaseapp.com",
-  databaseURL: "https://showertracker-44ce2-default-rtdb.firebaseio.com",
-  projectId: "showertracker-44ce2",
-  storageBucket: "showertracker-44ce2.appspot.com",
-  messagingSenderId: "125138892507",
-  appId: "1:125138892507:web:651fdd3cf5e6daab133efe",
-  measurementId: "G-KMD7EQTCC2"
-};
-
-firebase.initializeApp(firebaseConfig);
-const database = getDatabase();
-const user = 'CjREE7dyUPa6o2Mj35X5pu3Y9xS2';
-sense.clear();
 
 
