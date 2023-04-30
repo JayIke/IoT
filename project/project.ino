@@ -79,20 +79,22 @@ void loop() {
     while (central.connected()) {
   if (samplesRead) {
     Serial.println("Read");
+        int maxAbs = 0;
     // Print samples to the serial monitor or plotter
     for (int i = 0; i < samplesRead; i++) {
       Serial.println(sampleBuffer[i]);
-      if (sampleBuffer[i] > 1000 || sampleBuffer[i] <= -1000) {
+          if (abs(sampleBuffer[i]) > maxAbs) maxAbs = abs(sampleBuffer);
+    }
+      if (maxAbs > 1000 || maxAbs <= -1000) {
         handleHigh();
       }
         handleLow();
-    }
+      }
     // Clear the read count
     samplesRead = 0;
   }
     }
   }
-}
 
 void handleHigh() {
   polls+=1;
@@ -125,9 +127,14 @@ void handleLow() {
     case MAYBE: 
     state = OFF;
      break;
-    case ON: clr = YELLOW; break;    
-    // etc
-    default: break;
+    case ON: 
+      int seed = random(100000,999999);
+      float time = millis() - timer;
+      rx.writeValue("D/" + seed + "/" + (time/1000.))
+      rx.writeValue("T/" + seed + "/" + (highest_temp));
+      rx.writeValue("H/" + seed + "/" + (highest_hum));
+      state = OFF
+  default: break;
 
 }
 
