@@ -246,3 +246,67 @@ function updateDB(){
     		console.error(error);
 	});
 }*/
+
+/*switch (metric) {
+    // Duration tag
+    case 'D':
+      let endStamp = new Date(Date.now()); //get current date/time 
+      console.log('endStamp: ' + endStamp.toISOString());
+
+      let dur = Number(measurement); //duration in seconds
+      let duration = dur * 1000; //duration in milliseconds
+      let startStamp = new Date(endStamp.valueOf() - duration); 
+      console.log('startStamp: ' + startStamp.toISOString);
+
+      // Write time info to Firebase database
+      set(database, 'users/' + user + '/showers/' + sessionID), {
+        duration: dur,
+        end: endStamp.toISOString(),
+        start: startStamp.toISOString(),
+      };
+      console.log('Posted duration (' + measurement + ' s) for session: ' + sessionID);
+      
+      break;
+
+      // Humidity tag
+    case 'H':
+      // Write humidity info to Firebase database
+      set(database, 'users/' + user + '/showers/' + sessionID), {
+        humidity: measurement,
+      };
+      console.log('Posted humidity (' + measurement + ') for session: ' + sessionID);
+      firebase
+        .database()
+        .ref('users/' + user + '/humidity')
+        .update(humidityUpdates)
+        .then(() => {
+          console.log('Updated humidity (' + measurement + ') information for session: ' + sessionID);
+        })
+        .catch(error => {
+          console.error('Error updating humidity information: ' + error);
+        });
+      break;
+
+      // Temperature tag
+    case 'T':
+      // Write temperature info to Firebase database
+      set(database, 'users/' + user + '/showers/' + sessionID), {
+        temperature: measurement,
+      };
+      console.log('Posted temperature (' + measurement + ') for session: ' + sessionID);
+      firebase
+        .database()
+        .ref('users/' + user + '/' + sessionID + '/temperature')
+        .update(temperatureUpdates)
+        .then(() => {
+          console.log('Updated temperature (' + measurement + ') information for session: ' + sessionID);
+        })
+        .catch(error => {
+          console.error('Error updating temperature information: ' + error);
+        });
+      break;
+
+    default:
+      console.log('Unknown metric: ' + metric);
+      break;
+  }*/
