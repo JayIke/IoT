@@ -61,23 +61,30 @@ async function main( )
 	//const humChar = await essService.getCharacteristic( HUM_CHAR_UUID.toLowerCase());
 	//const timeChar = await essService.getCharacteristic( DATETIME_CHAR_UUID.toLowerCase());
 	//const batChar = await essService.getCharacteristic( BAT_CHAR_UUID.toLowerCase());
-  
-    // Register for notifications on the RX characteristic
-    await rxChar.startNotifications( );
-
-// Callback for when data is received on RX characteristic
-rxChar.on('valuechanged', buffer => {
-  let dat = buffer.toString().trim();
-  console.log('Buffer: ' + dat);
-  const [metric, sessionID, measurement] = dat.split(':');
- 
-  
   let duration = 0;
   let endStamp = '';
   let startStamp = '';
   let temperature = 0;
   let humidity = 0;
-  let day = new Date().getDay();
+ 
+    // Register for notifications on the RX characteristic
+    await rxChar.startNotifications( );
+   
+// Callback for when data is received on RX characteristic
+rxChar.on('valuechanged', buffer => {
+  let dat = buffer.toString().trim();
+  console.log('Buffer: ' + dat);
+  const [metric, sessionID, measurement] = dat.split(':');
+  const sessionRef = ref(database,'users/' + USER + '/showers');
+  /*let duration = 0;
+  let endStamp = '';
+  let startStamp = '';
+  let temperature = 0;
+  let humidity = 0;*/
+ 
+  
+  
+  //let day = new Date().getDay();
   //let dateArr = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
   //let day = datArr[day];
   switch (metric) {
@@ -91,14 +98,42 @@ rxChar.on('valuechanged', buffer => {
         console.log('startStamp: ' + startStamp);
         endStamp = endStamp.toISOString(); 
         console.log('endStamp: ' + endStamp);
+        console.log('sessionRef: ' + sessionRef);
+        update(sessionRef,{
+          [sessionID]:{
+          'end': endStamp,
+          'start': startStamp,
+          'duration': duration,
+          'temperature': temperature,
+          'humidity': humidity,
+          }
+        });
         break;
     
     case 'T':
         temperature = parseFloat(measurement);
+        update(sessionRef,{
+          [sessionID]:{
+            'end': endStamp,
+            'start': startStamp,
+            'duration': duration,
+            'temperature': temperature,
+            'humidity': humidity,
+          }
+        });
         break;
     
     case 'H':
         humidity = parseFloat(measurement);
+        update(sessionRef,{
+          [sessionID]:{
+            'end': endStamp,
+            'start': startStamp,
+            'duration': duration,
+            'temperature': temperature,
+            'humidity': humidity,
+          }
+        });
         break;
     
     default:
@@ -106,47 +141,6 @@ rxChar.on('valuechanged', buffer => {
          break;
 
   }
-
-  const sessionRef = ref(database,`users/${USER}/showers/${sessionID}`);
-  //const sessionRef = showerRef.child(sessionID);
-
-  sessionRef.once("value", async function(snapshot){
-    if (!snapshot.exists()) {
-      // If sessionID does not exist, create new node and write sensor data properties
-      sessionRef.set({
-        sessionID: {
-          end: endStamp,
-          start: startStamp,
-          duration: duration,
-          temperature: temperature,
-          humidity: humidity,
-          day: day,
-        }
-      });
-      console.log('set database')
-    } else {
-      // If sessionID already exists, update existing node with new sensor data property
-      console.log('entered else')
-      switch (metric) {
-        case 'D':
-          sessionRef.update({ 
-            end: endStamp,
-            start: startStamp,
-            duration: measurement,
-          });
-          break;
-        case 'T':
-          sessionRef.update({temperature: measurement});
-          break;
-        case 'H':
-          sessionRef.update({humidity: measurement});
-          break;
-        default:
-          console.log('No update matches: ' + metric);
-      }
-      
-    }
-  });
   
 
   
