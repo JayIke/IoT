@@ -1,13 +1,13 @@
-const { buf } = require( 'node:buffer' );
-const { createBluetooth } = require( 'node-ble' );
+const { buf } = require('node:buffer');
+const { createBluetooth } = require('node-ble');
 
 ///////////FIREBASE THINGS////////////
 
 var firebase = require('firebase/app');
-var nodeimu = require('@trbll/nodeimu');
-//var IMU = new nodeimu.IMU();
-//var sense = require('@trbll/sense-hat-led');
-const {getDatabase, ref, onValue, set, update, child,  get} = require('firebase/database');
+
+const { getDatabase, ref, onValue, set, update, child, get } = require('firebase/database');
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyCuJwJ8np2Bcim-ECWnqi6TE-CxbogMCNk",
   authDomain: "showertracker-44ce2.firebaseapp.com",
@@ -21,7 +21,8 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const database = getDatabase();
-const user = 'CjREE7dyUPa6o2Mj35X5pu3Y9xS2';
+
+const USER = 'CjREE7dyUPa6o2Mj35X5pu3Y9xS2';
 
 // TODO: Replace this with your Arduino's Bluetooth address
 // as found by running the 'scan on' command in bluetoothctl
@@ -68,88 +69,87 @@ async function main( )
 rxChar.on('valuechanged', buffer => {
   let dat = buffer.toString().trim();
   console.log('Buffer: ' + dat);
-
-  let datArray = dat.split(':');
-  let metric = datArray[0];
-  let sessionID = datArray[1];
-  let measurement = datArray[2];
-
+  const [metric, sessionID, measurement] = dat.split(':');
+ 
   
-  
-
+  let duration = 0;
+  let endStamp = '';
+  let startStamp = '';
+  let temperature = 0;
+  let humidity = 0;
+  let day = new Date().getDay();
+  //let dateArr = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  //let day = datArr[day];
   switch (metric) {
-    // Duration tag
     case 'D':
-      let endStamp = new Date(Date.now()); //get current date/time 
-      console.log('endStamp: ' + endStamp.toISOString());
-
-      let dur = Number(measurement); //duration in seconds
-      let duration = dur * 1000; //duration in milliseconds
-      let startStamp = new Date(endStamp.valueOf() - duration); 
-      console.log('startStamp: ' + startStamp.toISOString);
-
-      // Write time info to Firebase database
-      set(database, 'users/' + user + '/showers/' + sessionID), {
-        duration: dur,
-        end: endStamp.toISOString(),
-        start: startStamp.toISOString(),
-      };
-      console.log('Posted duration (' + measurement + ' s) for session: ' + sessionID);
-      /*set(ref(database, 'users/' + user + '/'))
-      firebase
-        .database()
-        .ref('users/' + user + '/showers' + sessionID)
-        .update(showerUpdates)
-        .then(() => {
-          console.log('Updated shower information for session: ' + sessionID);
-        })
-        .catch(error => {
-          console.error('Error updating shower information: ' + error);
-        });*/
-      break;
-
-      // Humidity tag
-    case 'H':
-      // Write humidity info to Firebase database
-      set(database, 'users/' + user + '/showers/' + sessionID), {
-        humidity: measurement,
-      };
-      console.log('Posted humidity (' + measurement + ') for session: ' + sessionID);
-      /*firebase
-        .database()
-        .ref('users/' + user + '/humidity')
-        .update(humidityUpdates)
-        .then(() => {
-          console.log('Updated humidity (' + measurement + ') information for session: ' + sessionID);
-        })
-        .catch(error => {
-          console.error('Error updating humidity information: ' + error);
-        });*/
-      break;
-
-      // Temperature tag
+        endStamp = new Date(Date.now());
+        
+        duration = Number(measurement); //duration in seconds
+        let dur = duration * 1000; //duration in milliseconds
+        startStamp = new Date(endStamp.valueOf() - dur); 
+        startStamp = startStamp.toISOString();
+        console.log('startStamp: ' + startStamp);
+        endStamp = endStamp.toISOString(); 
+        console.log('endStamp: ' + endStamp);
+        break;
+    
     case 'T':
-      // Write temperature info to Firebase database
-      set(database, 'users/' + user + '/showers/' + sessionID), {
-        temperature: measurement,
-      };
-      console.log('Posted temperature (' + measurement + ') for session: ' + sessionID);
-      /*firebase
-        .database()
-        .ref('users/' + user + '/' + sessionID + '/temperature')
-        .update(temperatureUpdates)
-        .then(() => {
-          console.log('Updated temperature (' + measurement + ') information for session: ' + sessionID);
-        })
-        .catch(error => {
-          console.error('Error updating temperature information: ' + error);
-        });*/
-      break;
-
+        temperature = parseFloat(measurement);
+        break;
+    
+    case 'H':
+        humidity = parseFloat(measurement);
+        break;
+    
     default:
-      console.log('Unknown metric: ' + metric);
-      break;
+         console.log('Unkown metric: ' + metric);
+         break;
+
   }
+
+  const sessionRef = ref(database,`users/${USER}/showers/${sessionID}`);
+  //const sessionRef = showerRef.child(sessionID);
+
+  sessionRef.once("value", async function(snapshot){
+    if (!snapshot.exists()) {
+      // If sessionID does not exist, create new node and write sensor data properties
+      sessionRef.set({
+        sessionID: {
+          end: endStamp,
+          start: startStamp,
+          duration: duration,
+          temperature: temperature,
+          humidity: humidity,
+          day: day,
+        }
+      });
+      console.log('set database')
+    } else {
+      // If sessionID already exists, update existing node with new sensor data property
+      console.log('entered else')
+      switch (metric) {
+        case 'D':
+          sessionRef.update({ 
+            end: endStamp,
+            start: startStamp,
+            duration: measurement,
+          });
+          break;
+        case 'T':
+          sessionRef.update({temperature: measurement});
+          break;
+        case 'H':
+          sessionRef.update({humidity: measurement});
+          break;
+        default:
+          console.log('No update matches: ' + metric);
+      }
+      
+    }
+  });
+  
+
+  
 });
 }
 
