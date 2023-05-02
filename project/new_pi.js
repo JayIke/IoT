@@ -149,7 +149,7 @@ rxChar.on('valuechanged', buffer => {
   
 });
 
-const stdin = process.openStdin( );
+/*const stdin = process.openStdin( );
   stdin.addListener( 'data', async function( d )
     {
         let inStr = d.toString( ).trim( );
@@ -172,7 +172,7 @@ const stdin = process.openStdin( );
         {
             console.log('Sent: ' + inStr);
         });
-    });
+    });*/
 }
 
 main().then((ret) =>
@@ -184,28 +184,5 @@ main().then((ret) =>
 });
 
 
-const stdin = process.openStdin( );
-    stdin.addListener( 'data', async function( d )
-    {
-        let inStr = d.toString( ).trim( );
 
-        // Disconnect and exit if user types 'exit'
-        if (inStr === 'exit')
-        {
-            console.log( 'disconnecting...' );
-            await device.disconnect();
-            console.log( 'disconnected.' );
-            destroy();
-            process.exit();
-        }
-
-        // Specification limits packets to 20 bytes; truncate string if too long.
-        inStr = (inStr.length > 20) ? inStr.slice(0,20) : inStr;
-
-        // Attempt to write/send value to TX characteristic
-        await txChar.writeValue(Buffer.from(inStr)).then(() =>
-        {
-            console.log('Sent: ' + inStr);
-        });
-    });
 
