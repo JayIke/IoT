@@ -1,4 +1,5 @@
 
+
 #include <Arduino_HTS221.h>
 #include <Arduino_LSM9DS1.h>
 #include <PDM.h>
@@ -8,9 +9,7 @@
 
 bool LED_SWITCH;
 
-enum STATE { OFF,
-             MAYBE,
-             ON };
+enum STATE {OFF, MAYBE, ON};
 
 BLEService uartService("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
 BLEStringCharacteristic txChar("6E400002-B5A3-F393-E0A9-E50E24DCCA9E", BLEWrite, 20);
@@ -24,6 +23,7 @@ STATE state = OFF;
 int timer = 0;
 int highest_temp = 0;
 int highest_hum = 0;
+int polls = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -70,25 +70,76 @@ void setup() {
 
 void loop() {
   // Wait for samples to be read
-  if (samplesRead) {
-    Serial.println("Read");
-    // Print samples to the serial monitor or plotter
-    for (int i = 0; i < samplesRead; i++) {
-      Serial.println(sampleBuffer[i]);
-      if (sampleBuffer[i] > 1000 || sampleBuffer[i] <= -1000) {
-        handleHigh();
+  if (central) {
+    // Print the central's BT address.
+    Serial.print("Connected to central: ");
+    Serial.println(central.address());
+
+    // While the central device is connected...
+    while (central.connected()) {
+      if (samplesRead) {
+        Serial.println("Read");
+        int maxAbs = 0;
+        // Print samples to the serial monitor or plotter
+        for (int i = 0; i < samplesRead; i++) {
+          Serial.println(sampleBuffer[i]);
+          if (abs(sampleBuffer[i]) > maxAbs) maxAbs = abs(sampleBuffer);
+        }
+        if (maxAbs > 1000) {
+          Serial.println("High signal");
+          handleHigh();
+        }
+          handleLow();
+        }
+        // Clear the read count
+        samplesRead = 0;
       }
-      handleLow();
     }
-    // Clear the read count
-    samplesRead = 0;
+  }
+
+void handleHigh() {
+  polls += 1;
+  int tmp = HTS.readTemperature();
+  // int hum = 
+  if (tmp > highest_temp) highest_temp = tmp;
+
+  switch (state) {
+    case OFF: 
+      state = MAYBE;
+      timer = millis();
+      highest_temp = 0;
+      highest_hum = 0;
+      polls = 0;
+      break;
+    case MAYBE: 
+      if (millis() - timer > 40 * 1000) {
+        state = ON;
+      }; break;
+    case ON: 
+      break;    
+    default: break;
   }
 }
 
-void handleHigh() {
-}
-
 void handleLow() {
+  switch (state) {
+    case OFF: 
+      break;
+    case MAYBE: 
+      state = OFF;
+      break;
+    case ON: 
+      int seed = random(100000,999999);
+      float time = millis() - timer;
+      Serial.println("D/" + seed + "/" + (time/1000.));
+      rx.writeValue("D/" + seed + "/" + (time/1000.))
+      Serial.println("T/" + seed + "/" + (highest_temp));
+      rx.writeValue("T/" + seed + "/" + (highest_temp));
+      Serial.println("H/" + seed + "/" + (highest_hum));
+      rx.writeValue("H/" + seed + "/" + (highest_hum));
+      state = OFF
+    default: break;
+  }
 }
 
 void onPDMdata() {
