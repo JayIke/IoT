@@ -100,7 +100,8 @@ void loop() {
 void handleHigh() {
   polls += 1;
   int tmp = HTS.readTemperature();
-  // int hum = 
+  int hum = HTS.readHumidity();
+  if (hum > highest_hum) highest_hum = hum;
   if (tmp > highest_temp) highest_temp = tmp;
 
   switch (state) {
