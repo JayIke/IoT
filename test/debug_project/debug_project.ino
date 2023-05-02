@@ -9,6 +9,7 @@
 #define DURATION 10000
 #define THRESHOLD 300
 
+
 bool LED_SWITCH;
 
 enum STATE {OFF, MAYBE, ON};
@@ -30,25 +31,26 @@ int highest_hum = 0;
 int polls = 0;
 
 void setup() {
-  Serial.begin(9600);
+/* 
+ Serial.begin(9600);
   while (!Serial)
-    ;
+    ;*/
 
   if (!BLE.begin()) {
-    Serial.println("Starting BLE failed!");
+    //Serial.println("Starting BLE failed!");
     while (1)
       ;
   }
 
   PDM.onReceive(onPDMdata);
   if (!PDM.begin(channels, frequency)) {
-    Serial.println("Failed to start PDM!");
+    //Serial.println("Failed to start PDM!");
     while (1)
       ;
   }
 
   if (!HTS.begin()) {
-    Serial.println("Failed to initialize humidity temperature sensor!");
+    //Serial.println("Failed to initialize humidity temperature sensor!");
     while (1)
       ;
   }
@@ -56,6 +58,8 @@ void setup() {
   // Get the Arduino's BT address
   String deviceAddress = BLE.address();
   BLE.setLocalName("Shower monitor");
+
+   
 
   // UART service
   BLE.setAdvertisedService(uartService);
@@ -65,12 +69,12 @@ void setup() {
 
   // Start advertising
   BLE.advertise();
-  Serial.println("Bluetooth device (" + deviceAddress + ") active, waiting for connections...");
+  //Serial.println("Bluetooth device (" + deviceAddress + ") active, waiting for connections...");
 
   LED_SWITCH = false;
 
   
-  Serial.println("Registered callback");
+  //Serial.println("Registered callback");
 }
 
 void loop() {
@@ -78,30 +82,33 @@ void loop() {
   // Wait for samples to be read
   if (central) {
     // Print the central's BT address.
-    Serial.print("Connected to central: ");
-    Serial.println(central.address());
+    //Serial.print("Connected to central: ");
+    //Serial.println(central.address());
 
     // While the central device is connected...
     while (central.connected()) {
       if (samplesRead) {
-        Serial.println("Read");
+        //Serial.println("Read");
         int maxAbs = 0;
         // Print samples to the serial monitor or plotter
         for (int i = 0; i < samplesRead; i++) {
-          Serial.println(sampleBuffer[i]);
+          //Serial.println(sampleBuffer[i]);
           if (abs(sampleBuffer[i]) > maxAbs) maxAbs = abs(sampleBuffer[i]);//added index for abs
         }
         if (maxAbs > THRESHOLD) {
-          Serial.println("High signal");
+          //String max = String(maxAbs);
+          //Serial.print("Max: ");
+          //Serial.println(max);
           handleHigh();
-        }
+        } else {
           handleLow();
+        }          
         }
         // Clear the read count
         samplesRead = 0;
       }
-      Serial.print("Disconnected from central: ");
-      Serial.println(central.address());
+      //Serial.print("Disconnected from central: ");
+      //Serial.println(central.address());
       }
     
   }
@@ -125,8 +132,10 @@ void handleHigh() {
     }
       break;
     case MAYBE: 
-      if ((millis() - timer) > (DURATION)) {
+      if ((millis() - timer) > DURATION) {
         state = ON;
+        //digitalWrite(RED, HIGH);
+        //delay(100);
       } break;
     case ON: 
       break;    
@@ -142,6 +151,7 @@ void handleLow() {
       state = OFF;
       break;
     case ON: {
+     
       char bufferTime[BUFSIZE+1];
       char bufferTemp[BUFSIZE+1];
       char bufferHum[BUFSIZE+1];
@@ -149,19 +159,21 @@ void handleLow() {
       int seed = random(100000,999999);
       float time = (millis() - timer) / 1000.0; // convert to seconds
       String timeString = String("D/") + String(seed) + String("/") + String(time);
-      snprintf(bufferTime, BUFSIZE, "D/%d/%d", seed, time);
-      Serial.println(bufferTime);
+      //snprintf(bufferTime, BUFSIZE, "D/%d/%d", seed, time);
+      //Serial.println(bufferTime);
       rxChar.writeValue(timeString);
 
       String tempString = String("T/") + String(seed) + String("/") + String(highest_temp);
-      snprintf(bufferTemp, BUFSIZE, "T/%d/%.1f", seed, highest_temp);      
-      Serial.println(bufferTemp);
+      //snprintf(bufferTemp, BUFSIZE, "T/%d/%.1f", seed, highest_temp);      
+      //Serial.println(bufferTemp);
       rxChar.writeValue(tempString);
 
       String humString = String("H/") + String(seed) + String("/") + String(highest_hum);
-      snprintf(bufferHum, BUFSIZE, "H/%d/%.1f", seed, highest_hum);   
-      Serial.println(bufferHum);
+      //snprintf(bufferHum, BUFSIZE, "H/%d/%.1f", seed, highest_hum);   
+      //Serial.println(bufferHum);
       rxChar.writeValue(humString);
+      
+      
       state = OFF;
     }
       break;
@@ -180,7 +192,7 @@ void onPDMdata() {
   samplesRead = bytesRead / 2;
 }
 
-void loop2() {
+/*void loop2() {
   // Wait for a BLE central device.
   BLEDevice central = BLE.central();
 
@@ -218,4 +230,4 @@ void loop2() {
     Serial.print("Disconnected from central: ");
     Serial.println(central.address());
   }
-}
+}*/
