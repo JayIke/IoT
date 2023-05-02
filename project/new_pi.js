@@ -51,12 +51,12 @@ async function main( )
     // Get references to the desired UART service and its characteristics
     const gattServer = await device.gatt();
     const uartService = await gattServer.getPrimaryService( UART_SERVICE_UUID.toLowerCase() );
-    const txChar = await uartService.getCharacteristic( TX_CHARACTERISTIC_UUID.toLowerCase() );
+    //const txChar = await uartService.getCharacteristic( TX_CHARACTERISTIC_UUID.toLowerCase() );
     const rxChar = await uartService.getCharacteristic( RX_CHARACTERISTIC_UUID.toLowerCase() );
 
     // Get references to the desired ESS service and its temparature, humidity, and time characteristic.
     // TODO
-    const essService = await gattServer.getPrimaryService( EES_SERVICE_UUID.toLowerCase() );
+   // const essService = await gattServer.getPrimaryService( EES_SERVICE_UUID.toLowerCase() );
     //const tempChar = await essService.getCharacteristic( TEMP_CHAR_UUID.toLowerCase() );    
 	//const humChar = await essService.getCharacteristic( HUM_CHAR_UUID.toLowerCase());
 	//const timeChar = await essService.getCharacteristic( DATETIME_CHAR_UUID.toLowerCase());
@@ -74,7 +74,7 @@ async function main( )
 rxChar.on('valuechanged', buffer => {
   let dat = buffer.toString().trim();
   console.log('Buffer: ' + dat);
-  const [metric, sessionID, measurement] = dat.split(':');
+  const [metric, sessionID, measurement] = dat.split('/');
   const sessionRef = ref(database,'users/' + USER + '/showers');
   /*let duration = 0;
   let endStamp = '';
@@ -100,7 +100,7 @@ rxChar.on('valuechanged', buffer => {
         console.log('endStamp: ' + endStamp);
         console.log('sessionRef: ' + sessionRef);
         update(sessionRef,{
-          [sessionID]:{
+          [`/${sessionID}`]:{
           'end': endStamp,
           'start': startStamp,
           'duration': duration,
@@ -113,7 +113,7 @@ rxChar.on('valuechanged', buffer => {
     case 'T':
         temperature = parseFloat(measurement);
         update(sessionRef,{
-          [sessionID]:{
+          [`/${sessionID}`]:{
             'end': endStamp,
             'start': startStamp,
             'duration': duration,
@@ -126,7 +126,7 @@ rxChar.on('valuechanged', buffer => {
     case 'H':
         humidity = parseFloat(measurement);
         update(sessionRef,{
-          [sessionID]:{
+          [`/${sessionID}`]:{
             'end': endStamp,
             'start': startStamp,
             'duration': duration,
@@ -134,6 +134,11 @@ rxChar.on('valuechanged', buffer => {
             'humidity': humidity,
           }
         });
+        endStamp = '';
+        startStamp = '';
+        duration = 0;
+        temperature = 0;
+        humidity = 0;
         break;
     
     default:
@@ -142,9 +147,32 @@ rxChar.on('valuechanged', buffer => {
 
   }
   
-
-  
 });
+
+const stdin = process.openStdin( );
+  stdin.addListener( 'data', async function( d )
+    {
+        let inStr = d.toString( ).trim( );
+
+        // Disconnect and exit if user types 'exit'
+        if (inStr === 'exit')
+        {
+            console.log( 'disconnecting...' );
+            await device.disconnect();
+            console.log( 'disconnected.' );
+            destroy();
+            process.exit();
+        }
+
+        // Specification limits packets to 20 bytes; truncate string if too long.
+        inStr = (inStr.length > 20) ? inStr.slice(0,20) : inStr;
+
+        // Attempt to write/send value to TX characteristic
+        await txChar.writeValue(Buffer.from(inStr)).then(() =>
+        {
+            console.log('Sent: ' + inStr);
+        });
+    });
 }
 
 main().then((ret) =>
@@ -156,5 +184,28 @@ main().then((ret) =>
 });
 
 
+const stdin = process.openStdin( );
+    stdin.addListener( 'data', async function( d )
+    {
+        let inStr = d.toString( ).trim( );
 
+        // Disconnect and exit if user types 'exit'
+        if (inStr === 'exit')
+        {
+            console.log( 'disconnecting...' );
+            await device.disconnect();
+            console.log( 'disconnected.' );
+            destroy();
+            process.exit();
+        }
+
+        // Specification limits packets to 20 bytes; truncate string if too long.
+        inStr = (inStr.length > 20) ? inStr.slice(0,20) : inStr;
+
+        // Attempt to write/send value to TX characteristic
+        await txChar.writeValue(Buffer.from(inStr)).then(() =>
+        {
+            console.log('Sent: ' + inStr);
+        });
+    });
 
